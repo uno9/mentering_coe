@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Coeco Test</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+        integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <header>
+        <h1>プロトチャット</h1>
+    </header>
+
+    <main>
+        <div class="name_box" class="form-group">
+            <div class="name_box">
+                <p>name</p>
+                <input type="text" class="name" class="form-control" id="name">
+                <button id="name_clear" class="form-control">clear</button>
+            </div>
+
+            <div class="text_box" class="form-group">
+                <p>text</p>
+                <textarea name="" id="text" class="text" class="form-control" cols="30" rows="5"></textarea>
+                <button id="send" class="form-control">send</button>
+                <button id="clear" class="form-control">clear</button>
+            </div>
+
+            <div id="output"></div>
+        </div>
+    </main>
+    <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: your_key,
+            authDomain: your_key,
+            databaseURL: your_key,
+            projectId: your_key,
+            storageBucket: your_key,
+            messagingSenderId: your_key
+        };
+        firebase.initializeApp(config);
+
+        var newPostRef = firebase.database().ref();
+    </script>
+
+    <script>
+        // 日時の取得
+        function ymd() {
+            var date = new Date();
+            return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
+        }
+
+        // 送信
+        $('#send').on('click', function () {
+            newPostRef.push({
+                name: $('#name').val(),
+                text: $('#text').val(),
+                time: ymd()
+            });
+
+            $('#text').val('');
+        });
+
+        // name,textクリア
+        $('#name_clear').on('click', function () {
+            localStorage.removeItem('name');
+            $('#name_clear').val('');
+        });
+
+
+        $('#clear').on('click', function () {
+            localStorage.removeItem('text');
+            $('#text').val('');
+        });
+
+        // 自動表示
+        newPostRef.on('child_added', function (data) {
+            var k = data.key;
+            var v = data.val();
+
+            console.log(k);
+            console.log(v);
+
+            var str = '';
+            str += '<div id="' + k + '">';
+            str += `<p>${v.name}</p>`;
+            str += `<p>${v.text}</p>`;
+            str += `<p>${v.time}</p>`;
+
+            $('#output').prepend(str);
+        });
+
+        $('#text').on('keydown', function (e) {
+            if (e.keyCode == 13) {
+                newPostRef.push({
+                    name: $('#name').val(),
+                    text: $('#text').val(),
+                    time: ymd()
+                });
+
+                $('#text').val('');
+
+            };
+        });
+
+
+
+    </script>
+
+
+
+</body>
+
+</html>
