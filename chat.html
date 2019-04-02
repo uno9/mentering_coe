@@ -18,7 +18,8 @@
     </header>
 
     <main>
-        <div class="name_box" class="form-group">
+
+        <div id="text_box" class="form-group">
             <div class="name_box">
                 <p>name</p>
                 <input type="text" class="name" class="form-control" id="name">
@@ -28,12 +29,25 @@
             <div class="text_box" class="form-group">
                 <p>text</p>
                 <textarea name="" id="text" class="text" class="form-control" cols="30" rows="5"></textarea>
+            </div>
+
+            <div class="image_box" class="form-group">
+                <form autocomplete="off">
+                    <input type="file" id="setfile">
+                    <input type="submit" class="form-control" value="写真送信">
+                </form>
+                <div id="imgSample"></div>
+            </div>
+
+            <div class="submit_clear" class="form-group">
                 <button id="send" class="form-control">send</button>
                 <button id="clear" class="form-control">clear</button>
             </div>
 
             <div id="output"></div>
+
         </div>
+
     </main>
     <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
 
@@ -41,60 +55,133 @@
     <script>
         // Initialize Firebase
         var config = {
-            apiKey: your_key,
-            authDomain: your_key,
-            databaseURL: your_key,
-            projectId: your_key,
-            storageBucket: your_key,
-            messagingSenderId: your_key
+            apiKey: yourkey,
+            authDomain: yourkey,
+            databaseURL: yourkey,
+            projectId: yourkey,
+            storageBucket: yourkey,
+            messagingSenderId: yourkey
         };
         firebase.initializeApp(config);
 
-        var newPostRef = firebase.database().ref();
+        var chatPostRef = firebase.database().ref('/chat');
     </script>
 
     <script>
+
+        (() => {
+            // セキュリティチェック
+            // strictはコードが厳格モードになる
+            // より的確正確なエラーチェックができるようになる
+            'use strict';
+
+
+
+            // 写真投稿可な処理
+            var img_url;
+
+            // インスタンス：　設計図をもとに作り上げられたモノ＝形が出来上がっている
+            // formインスタンスの定義
+            const form = document.querySelector('form');
+            // setfileのインスタンスを作成
+            const setfile = document.getElementById("setfile");
+            // cloudStorageインスタンスを作成
+            const storage = firebase.storage();
+            // imageのインスタンスを作成
+            const image = document.getElementById("imgSample");
+
+            // グローバル変数を定義
+            var file_name;
+            var blob;
+
+
+            // setFireの変更で処理開始(eに変更要素が取得される)
+            setfile.addEventListener("change", e => {
+                // eventがあったターゲットを取ってくる
+                var file = e.target.files;
+                // fileの名前を取得
+                file_name = file[0].name;
+                // blob形式に変換(マルチメディアの格納形式,jpegに変換中)
+                blob = new Blob(file, { type: "image/jpeg" });
+                console.warn(blob);
+            });
+
+            // submit項目の処理
+            form.addEventListener('submit', e => {
+                console.log('go');
+
+                // 実行したイベントがキャンセル可能であれば処理キャンする
+                e.preventDefault();
+
+                // storageのaea_imagesへの参照を定義
+                var uploadRef = storage.ref('chat/').child(file_name);
+                uploadRef.put(blob).then(snapshot => {
+                    console.log(snapshot.state);
+                    // アップロードしたファイルのurlを取得
+                    uploadRef.getDownloadURL().then(url => {
+
+                        img_url = url;
+
+                    }).catch(error => {
+                        console.log(error);
+                    });
+                });
+                // valueリセットする
+                file_name = '';
+                blob = '';
+            });
+
+
+            // 送信
+            $('#send').on('click', function () {
+                chatPostRef.push({
+                    name: $('#name').val(),
+                    text: $('#text').val(),
+                    image: img_url,
+                    time: ymd()
+                });
+
+
+                $('#text').val('');
+                $('#setfile').val('');
+
+            });
+
+        })();
+        // その他取得情報-------------------------------
+
+
         // 日時の取得
         function ymd() {
             var date = new Date();
             return date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds()
         }
 
-        // 送信
-        $('#send').on('click', function () {
-            newPostRef.push({
-                name: $('#name').val(),
-                text: $('#text').val(),
-                time: ymd()
-            });
-
-            $('#text').val('');
-        });
-
         // name,textクリア
         $('#name_clear').on('click', function () {
-            localStorage.removeItem('name');
-            $('#name_clear').val('');
+            $('#name').val('');
         });
 
 
         $('#clear').on('click', function () {
-            localStorage.removeItem('text');
             $('#text').val('');
+            $('#setfile').val('');
         });
 
-        // 自動表示
-        newPostRef.on('child_added', function (data) {
+        // 自動表示-------------------------------------
+        chatPostRef.on('child_added', function (data) {
             var k = data.key;
             var v = data.val();
 
             console.log(k);
             console.log(v);
+            console.log(v.image);
 
             var str = '';
             str += '<div id="' + k + '">';
             str += `<p>${v.name}</p>`;
             str += `<p>${v.text}</p>`;
+            str += `<img src="${v.image}" alt="" width="300px" height="100px" border="0" />`;
             str += `<p>${v.time}</p>`;
 
             $('#output').prepend(str);
@@ -102,18 +189,18 @@
 
         $('#text').on('keydown', function (e) {
             if (e.keyCode == 13) {
-                newPostRef.push({
+                chatPostRef.push({
                     name: $('#name').val(),
                     text: $('#text').val(),
+                    image: `<img src="${v.image}" alt="" width="300px" height="100px" border="0" />`,
                     time: ymd()
                 });
 
                 $('#text').val('');
+                $('#setfile').val('');
 
             };
         });
-
-
 
     </script>
 
