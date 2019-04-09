@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Synthesis</title>
+</head>
+
+
+<body>
+
+    <textarea id="text" cols="30" rows="10" placeholder="本文を入力して下さい"></textarea>
+
+    <select id="select_btn"></select>
+
+    <button id="speak_btn">再生</button>
+    <button id="cancel_btn">停止</button>
+    <button id="pause_btn">一時停止</button>
+    <button id="resume_btn">再開</button>
+
+
+    <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+
+    <script>
+        const text = document.querySelector('#text');
+
+        const voiceSelect = document.querySelector('#select_btn');
+
+        const speakBtn = document.querySelector('#speak_btn');
+        const cancelBtn = document.querySelector('#cancel_btn');
+        const pauseBtn = document.querySelector('#pause_btn');
+        const resumeBtn = document.querySelector('#resume_btn');
+
+
+        if ('speechSynthesis' in window) {
+            console.log('対応してます');
+        } else {
+            alert('対応していません');
+        }
+
+        // selectの中に選択可能な声の名前を入れる
+        function appendVoices() {
+            // 使用可能な声の配列を主取得(配列の中身は SpeechSynthesisVoice オブジェクト)
+            const voices = speechSynthesis.getVoices();
+
+            voiceSelect.innerHTML = '';
+
+            // アロー関数:functionの代替構文
+            voices.forEach(voice => {
+
+                // 日本語と英語以外は選択肢に入れない
+                const option = document.createElement('option');
+
+                // optionのvalにある名前と言語を取得
+                option.value = voice.name;
+                option.text = `${voice.name} (${voice.lang})`;
+
+                // optionからデータをexportする
+                option.setAttribute('selected', voice.default);
+
+                // voiceSelectにoptionを追加
+                voiceSelect.appendChild(option)
+            });
+        };
+        appendVoices();
+
+
+        // 使える声が追加されたときにイベント
+        // Chrome は非同期に(一個ずつ)声を読み込むため必要。
+        speechSynthesis.onvoiceschanged = e => {
+            appendVoices();
+        }
+
+        // speakBtnを押したときに処理
+        speakBtn.addEventListener('click', function () {
+
+            // 発言を作成(textarea内のval=textを取ってくる) 
+            const speak_text = new SpeechSynthesisUtterance(text.value);
+
+
+            // こえの設定------------------------------------
+            // 言語の指定
+            // アメリカ英語：es-US イギリス英語：en-GB 中国語：zh-CN 韓国語：ko-KR
+            // 日本語を指定：ja-JP
+            speak_text.lang = 'ja-JP'
+            // 速度(0.1-10)→初期値：１ 倍速：２、半分の倍速：0.5
+            speak_text.rate = 4
+            // 音程(高さ　0-1)→初期値：１
+            speak_text.pitch = 1
+            // 音量(0-1)→初期値：１
+            speak_text.volume = 1
+            // ----------------------------------------------
+
+
+            //  選択された声を指定
+            speak_text.voice = speechSynthesis
+                .getVoices()
+                .filter(voice => voice.name === voiceSelect.value)[0]
+
+
+            // 発言を再生 (発言キューにtextを追加)
+            speechSynthesis.speak(speak_text);
+
+        });
+
+        cancelBtn.addEventListener('click', function () {
+
+            // 発言を停止(発言キューをクリアにして止まる) 
+            speechSynthesis.cancel();
+        });
+
+        pauseBtn.addEventListener('click', function () {
+
+            // 一次停止(発言キューを保持して止まる) 
+            speechSynthesis.pause();
+        });
+
+        resumeBtn.addEventListener('click', function () {
+
+            // 再生再開(一時停止解除) 
+            speechSynthesis.resume();
+        });
+
+
+
+
+    </script>
+
+</body>
+
+</html>
