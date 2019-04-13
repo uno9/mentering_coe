@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>TEST</title>
+    <title>realtime</title>
 
 </head>
 
@@ -13,7 +13,7 @@
 
     <main>
 
-        <div id="text_box">
+        <div id="chat_box">
             <div class="name_box">
                 <p>Name</p>
                 <input style="border:1px #6785e1 solid; width: 800px;height: 30px;" type="text" id="name"
@@ -74,123 +74,11 @@
         var chatPostRef = firebase.database().ref('/chat');
     </script>
 
-    <script type="text/javascript" src="../00_Coeco/recognition.html"></script>
+    <!-- 音声認識によるチャット文入力 -->
+    <script type="text/javascript" src="../00_Coeco/recognition.js"></script>
+
+
     <script>
-        // ------------------------------------------------------------------------------
-        // // 音声認識でテキスト化
-        // SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
-
-        // // 使用チェック
-        // if ('SpeechRecognition' in window) {
-        //     console.log('対応しています');
-        // } else {
-        //     alert('対応していません');
-        // }
-
-        // // マイクを通じた音声を自動的に認識
-        // let recognition = new SpeechRecognition();
-
-        // // アメリカ英語：es-US イギリス英語：en-GB 中国語：zh-CN 韓国語：ko-KR
-        // // 日本語を指定：ja-JP
-        // recognition.lang = 'ja-JP';
-
-        // // interim(インタラム):暫定的 ->認識中の音声を文字化
-        // recognition.interimResults = true;
-
-        // // 認識期限(沈黙の1分までは暫定的にとらえる)
-        // recognition.continuous = true;
-
-        // // 確定した認識
-        // let finalTranscript = '';
-
-
-
-        // recognition.onresult = (event) => {
-
-        //     recognition.onresult = (event) => {
-
-        //         // 暫定的な認識
-        //         let interimTranscript = '';
-
-        //         // 配列に結果が入ってきたとき(暫定的な状況から認識start)
-        //         for (let i = event.resultIndex; i < event.results.length; i++) {
-
-        //             // consoleのresults[i][0]に入った認識語を出力
-        //             let transcript = event.results[i][0].transcript;
-        //             console.log(event.results[i].isFinal);
-
-
-        //             // false(終了)なら確定認識を出力
-        //             if (event.results[i].isFinal) {
-        //                 alert('認識終了');
-        //                 finalTranscript += transcript;
-
-        //                 // 送信
-        //                 $('#send').on('click', function () {
-        //                     if (file_blob != null) {
-        //                         chatPostRef.push({
-        //                             name: $('#name').val(),
-        //                             text: $('#text').val(),
-        //                             file: file_url,
-        //                             blob: file_blob.type,
-        //                             time: ymd()
-        //                         });
-        //                         $('#text').val('');
-        //                         $('#imgfile').val('');
-        //                         $('#audiofile').val('');
-        //                         $('#videofile').val('');
-
-        //                         file_url = null;
-        //                         file_blob = null;
-
-        //                     } else {
-        //                         chatPostRef.push({
-        //                             name: $('#name').val(),
-        //                             text: $('#text').val(),
-        //                             time: ymd()
-        //                         });
-        //                         $('#text').val('');
-        //                         $('#imgfile').val('');
-        //                         $('#audiofile').val('');
-        //                         $('#videofile').val('');
-
-        //                         file_url = null;
-        //                         file_blob = null;
-
-        //                     }
-
-        //                 });
-
-
-
-
-        //                 // true(認識中)なら暫定認識を出力
-        //             } else {
-        //                 interimTranscript = transcript;
-        //             }
-
-        //             if (transcript == 'ストップ') {
-        //                 recognition.stop();
-        //             }
-        //         }
-
-        //         // textにhtmlを表示させなさい
-        //         text.innerHTML = finalTranscript + interimTranscript;
-        //     }
-
-        // };
-
-
-        // $('#start_btn').on('click', function () {
-        //     recognition.start();
-        // });
-
-
-
-        // $('#stop_btn').on('click', function () {
-        //     // 音声認識終了
-        //     recognition.stop();
-        // });
 
         // -------------------------------------------------------------------------
         // firebase送信処理
@@ -278,6 +166,8 @@
                 blob = '';
             });
 
+            console.log(file_blob);
+
             // 日時の取得
             function ymd() {
                 var date = new Date();
@@ -361,7 +251,8 @@
             var str = '';
             str += `<div id="' ${k} '">`;
             str += `<p>${v.name}</p>`;
-            str += `<p>${v.text}</p>`;
+            // str += `<input type="text" value=${v.text} />`;
+            str += `<p>${v.text} </p>`;
 
             // 写真投稿している時
             if (v.blob == "image/jpeg") {
@@ -379,8 +270,77 @@
 
             str += `<p>${v.time}</p>`;
 
+            str += `<button id="speak-btn">再生</button>`;
+            str += `<button id="cancel-btn">停止</button>`;
+            str += `<button id="pause-btn">一時停止</button>`;
+            str += `<button id="resume-btn">再開</button>`;
+
+
             $('#output').prepend(str);
+
+
+            // 音声合成------------------------------------------
+
+            if ('speechSynthesis' in window) {
+                console.log('対応してます');
+            } else {
+                alert('対応していません');
+            }
+
+            // speakBtnを押したときに処理
+            $('#speak-btn').on('click', function () {
+                console.log('再生');
+
+                // 発言を作成(textarea内のval=textを取ってくる) 
+                const uttr = new SpeechSynthesisUtterance(v.text);
+
+                console.log(v.text);
+
+                // こえの設定------------------------------------
+                // 言語の指定
+                // アメリカ英語：es-US イギリス英語：en-GB 中国語：zh-CN 韓国語：ko-KR
+                // 日本語を指定：ja-JP
+                uttr.lang = 'ja-JP'
+                // 速度(0.1-10)→初期値：１ 倍速：２、半分の倍速：0.5
+                uttr.rate = 1.3
+                // 音程(高さ 0-1)→初期値：１
+                uttr.pitch = 1
+                // 音量(0-1)→初期値：１
+                uttr.volume = 1
+                // ----------------------------------------------
+
+
+                // 発言を再生 (発言キューにtextを追加)
+                speechSynthesis.speak(uttr)
+
+            });
+
+            $('#cancel-btn').on('click', function () {
+                console.log('停止');
+                // 発言を停止(発言キューをクリアにして止まる) 
+                speechSynthesis.cancel()
+
+            });
+
+            if ('#pasure')
+                $('#pause-btn').on('click', function () {
+                    console.log('一時停止');
+                    // 一次停止(発言キューを保持して止まる) 
+                    speechSynthesis.pause()
+
+                });
+
+
+            $('#resume-btn').on('click', function () {
+                console.log('再開');
+                // 再生再開(一時停止解除) 
+                speechSynthesis.resume()
+
+            });
+
+
         });
+
 
 
     </script>

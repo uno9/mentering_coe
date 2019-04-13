@@ -5,16 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ぷろとたいぷ</title>
+    <title>cloud</title>
 
 </head>
 
 <body>
 
     <main>
-        <header>
-            <p>ぷろとたいぷ</p>
-        </header>
 
         <div id="chat_box">
             <div class="name_box">
@@ -61,7 +58,11 @@
     </main>
     <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase-firestore.js"></script>
+    <!-- 音声認識によるチャット文入力 -->
+    <script type="text/javascript" src="../00_Coeco/recognition.js"></script>
+
     <script>
         // Initialize Firebase
         var config = {
@@ -74,14 +75,9 @@
         };
         firebase.initializeApp(config);
 
-        var chatPostRef = firebase.database().ref('/chat');
-    </script>
+        // データベース参照 
+        const db = firebase.firestore().collection('rooms');
 
-    <!-- 音声認識によるチャット文入力 -->
-    <script type="text/javascript" src="../00_Coeco/recognition.js"></script>
-
-
-    <script>
 
         // -------------------------------------------------------------------------
         // firebase送信処理
@@ -179,7 +175,7 @@
             // 送信
             $('#send').on('click', function () {
                 if (file_blob != null) {
-                    chatPostRef.push({
+                    db.collection('chats').add({
                         name: $('#name').val(),
                         text: $('#text').val(),
                         file: file_url,
@@ -195,7 +191,7 @@
                     file_blob = null;
 
                 } else {
-                    chatPostRef.push({
+                    db.collection('massages').add({
                         name: $('#name').val(),
                         text: $('#text').val(),
                         time: ymd()
@@ -207,7 +203,6 @@
 
                     file_url = null;
                     file_blob = null;
-
                 }
 
             });
@@ -240,44 +235,58 @@
         });
 
         // 自動表示-------------------------------------
-        chatPostRef.on('child_added', function (data) {
-            var k = data.key;
-            var v = data.val();
+        db.onSnapshot(function (snapshot) {
+            snapshot.docChanges.forEach(function (change) {
+                var k = change.doc.data().key;
+                var v = change.doc.data();
 
-            console.log(k);
-            console.log(v);
-            console.log(v.blob);
-            console.log(v.file);
-
-            var str = '';
-            str += `<div id="' ${k} '">`;
-            str += `<p>${v.name}</p>`;
-            // str += `<input type="text" value=${v.text} />`;
-            str += `<p>${v.text} </p>`;
-
-            // 写真投稿している時
-            if (v.blob == "image/jpeg") {
-                str += `<img src="${v.file}" alt="" width="400px" height="200px" border="0" />`;
-                // 音声投稿しているとき
-            } else if (v.blob == "audio/mpeg") {
-                str += `<audio controls src="${v.file}"></audio>`;
-                // 動画投稿しているとき
-            } else if (v.blob == "video/mpeg") {
-                str += `<video controls src="${v.file}" width="500px" height="300px"></video>`;
-                // ファイル投稿していないとき
-            } else {
-                console.warn("ファイルがありません");
-            }
-
-            str += `<p>${v.time}</p>`;
-
-            str += `<button id="speak-btn">再生</button>`;
-            str += `<button id="cancel-btn">停止</button>`;
-            str += `<button id="pause-btn">一時停止</button>`;
-            str += `<button id="resume-btn">再開</button>`;
+                console.log(k);
+                console.log(v);
+                console.log(v.blob);
+                console.log(v.file);
 
 
-            $('#output').prepend(str);
+                if (change.type === 'added') {
+
+                    // 表示物をstrに突っ込む
+                    var str = '';
+                    str += `<div id="' ${k} '">`;
+                    str += `<p>${v.name}</p>`;
+                    // str += `<input type="text" value=${v.text} />`;
+                    str += `<p>${v.text} </p>`;
+
+
+                    // 写真投稿している時
+                    if (v.blob == "image/jpeg") {
+                        str += `<img src="${v.file}" alt="" width="400px" height="200px" border="0" />`;
+                        // 音声投稿しているとき
+                    } else if (v.blob == "audio/mpeg") {
+                        str += `<audio controls src="${v.file}"></audio>`;
+                        // 動画投稿しているとき
+                    } else if (v.blob == "video/mpeg") {
+                        str += `<video controls src="${v.file}" width="500px" height="300px"></video>`;
+                        // ファイル投稿していないとき
+                    } else {
+                        console.warn("ファイルがありません");
+                    }
+
+                    str += `<p>${v.time}</p>`;
+
+                    str += `<button id="speak-btn">再生</button>`;
+                    str += `<button id="cancel-btn">停止</button>`;
+                    str += `<button id="pause-btn">一時停止</button>`;
+                    str += `<button id="resume-btn">再開</button>`;
+                    str += '</div>';
+
+                }
+
+                if (change.type === 'removed') {
+                    console.log('User ${change.doc.id}has gone offline.');
+                }
+
+                $('#output').prepend(str);
+
+            });
 
 
             // 音声合成------------------------------------------

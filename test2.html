@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0-alpha1/jquery.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase-firestore.js"></script>
+</head>
+
+<body>
+    <header>
+        <select placeholder="room" id="chooseRoom"></select>
+        <input type="button" id="choose" value="Choose"></input>
+    </header>
+    <div>
+        <input id="room_name" placeholder="chatRoom">
+        <button id="roomSend">投稿</button>
+    </div>
+
+    <div>
+        <input id="name" placeholder="名前">
+        <input id="text" placeholder="メッセージ">
+        <button id="send">投稿</button>
+    </div>
+    <ul id="messages"></ul>
+    <script>
+        $(function () {
+
+            // Initialize Firebase
+            var config = {
+                apiKey: "yourkey",
+                authDomain: "yourkey",
+                databaseURL: "yourkey",
+                projectId: "yourkey",
+                storageBucket: "yourkey",
+                messagingSenderId: "yourkey"
+            };
+            firebase.initializeApp(config);
+
+            // データベースの参照を準備(グローバル変数)
+            var roomsRef = firebase.firestore().collection('rooms');
+            var chatRef;
+
+
+            // ページ更新時に一括取得
+            // rooms(サブcollection)に対してアプローチ
+            roomsRef.get().then(function (querySnapshot) {
+                querySnapshot.forEach(function (doc) {
+                    // console.log(doc.data().chat_name);
+                    var roomDoc = [];
+                    roomDoc = doc.id;
+                    console.log(roomDoc);
+
+                    var roomName = [];
+                    roomName = doc.data().chat_name;
+
+                    $(`<option value=${roomDoc}>`).text(roomName).prependTo('#chooseRoom')
+
+                });
+            });
+
+            $('#choose').on('click', function () {
+                var chooseVal = $('#chooseRoom').val();
+                console.log(chooseVal);
+
+                // 選択room(サブcollection)に対してアプローチ＝querySnapshot
+                var chatRef = roomsRef.doc(chooseVal);
+
+                chatRef.collection('messages').get().then(function (querySnapshot) {
+                    querySnapshot.forEach(function (doc) {
+                        console.log(doc.id, '=>', doc.data());
+                        $('<li>').text(doc.data().name + ':' + doc.data().text).prependTo('#messages');
+                    });
+                });
+
+
+                // チャットが追加されたら、更新表示
+                chatRef.collection('messages').onSnapshot(function (snapshot) {
+                    snapshot.docChanges.forEach(function (change) {
+                        if (change.type === 'added') {
+                            console.log(change.doc.data().name + ':' + change.doc.data().text);
+                            $('<li>').text(change.doc.data().name + ':' + change.doc.data().text).prependTo('#messages');
+                        }
+                    });
+                });
+            });
+
+
+            $('#roomSend').click(function () {
+                roomsRef.doc().set({
+                    chat_name: $('#room_name').val()
+                });
+                $('#room_name').val('');
+            });
+
+
+            $('#send').click(function () {
+                chatRef.doc().collection('messages').add({
+                    name: $('#name').val(),
+                    text: $('#text').val()
+                });
+
+                $('#name').val('');
+                $('#text').val('');
+            });
+
+
+        });
+
+
+
+
+    </script>
+</body>
+
+</html>

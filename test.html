@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>chooseRoom</title>
+</head>
+
+<body>
+
+    <head>
+        <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+        <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase-firestore.js"></script>
+    </head>
+
+
+    <body>
+        <header>
+            <div id="chooseRoom"></div>
+        </header>
+
+        <div>
+            <a href="../00_Coeco/chooseRoom.html">room選択</a>
+        </div>
+
+        <div>
+            <input id="name" placeholder="名前">
+            <input id="text" placeholder="メッセージ">
+            <button id="send">投稿</button>
+        </div>
+
+        <ul id="messages"></ul>
+
+
+        <script>
+
+            $(function () {
+
+                // Initialize Firebase
+                var config = {
+                    apiKey: "yourkey",
+                    authDomain: "yourkey",
+                    databaseURL: "yourkey",
+                    projectId: "yourkey",
+                    storageBucket: "yourkey",
+                    messagingSenderId: "yourkey"
+                };
+                firebase.initializeApp(config);
+
+                // データベースの参照を準備(グローバル変数)
+                var roomsRef = firebase.firestore().collection('rooms');
+
+
+                // 選択room名の取得表示
+                var chooseNAME = localStorage.getItem('roomNAME');
+                console.log(chooseNAME);
+                // #chooseRoomに部屋名を取得表示
+                $(`<p>`).text(`${chooseNAME}`).prependTo('#chooseRoom');
+
+                // 選択roomIDの取得
+                var chooseID = localStorage.getItem('roomID');
+                console.log(roomsRef.doc(chooseID));
+
+                // 新規メッセージを投稿
+                $('#send').click(function () {
+                    roomsRef.doc(chooseID).collection('messages').add({
+                        name: $('#name').val(),
+                        text: $('#text').val()
+                    });
+
+                    $('#name').val('');
+                    $('#text').val('');
+
+
+                });
+
+                // チャットが追加されたら、更新表示
+                roomsRef.doc(chooseID).collection('messages').onSnapshot(function (snapshot) {
+                    snapshot.docChanges.forEach(function (change) {
+                        if (change.type === 'added') {
+                            console.log(change.doc.data().name + ':' + change.doc.data().text);
+                            $('<li>').text(change.doc.data().name + ':' + change.doc.data().text).prependTo('#messages');
+                        }
+                    });
+                });
+
+
+
+            });
+
+
+        </script>
+    </body>
+
+</html>

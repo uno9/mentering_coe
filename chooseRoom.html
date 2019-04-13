@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>chooseRoom</title>
+</head>
+
+<body>
+
+    <head>
+        <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+        <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase-firestore.js"></script>
+    </head>
+
+    <body>
+        <header>
+            <h3>chooseRoom</h3>
+        </header>
+        <main>
+            <div>
+                <select placeholder="room" id="chooseRoom"></select>
+                <input type="button" id="choose" value="Choose"></input>
+
+            </div>
+
+            <div>
+                <input id="room_name" placeholder="chatRoom">
+                <button id="roomSend">投稿</button>
+                <button id="reload">更新</button>
+
+            </div>
+
+        </main>
+
+        <script>
+
+            // Initialize Firebase
+            var config = {
+                apiKey: "yourkey",
+                authDomain: "yourkey",
+                databaseURL: "yourkey",
+                projectId: "yourkey",
+                storageBucket: "yourkey",
+                messagingSenderId: "yourkey"
+            };
+
+            firebase.initializeApp(config);
+
+
+            // データベースの参照を準備(グローバル変数)
+            var roomsRef = firebase.firestore().collection('rooms');
+
+            // ページ更新時に一括取得
+            // rooms(サブcollection)に対してアプローチ
+            roomsRef.get().then(function (querySnapshot) {
+                querySnapshot.forEach(function (doc) {
+                    // IDを取得
+                    var roomDoc = [];
+                    roomDoc = doc.id;
+                    console.log(roomDoc);
+
+                    // room名を取得
+                    var roomName = [];
+                    roomName = doc.data().chat_name;
+                    console.warn(roomName);
+
+                    $(`<option id=${roomName} value=${roomDoc}>`).text(roomName).prependTo('#chooseRoom')
+
+                });
+            });
+
+            // 選んだroomのvalをlocalstorageに保存->チャットページに受け渡し
+            $('#choose').on('click', function () {
+                var chooseVal = $('#chooseRoom').val();
+                console.log(chooseVal);
+                localStorage.setItem('roomID', chooseVal);
+
+
+                var chooseName = $('option:selected').text();
+                console.log(chooseName);
+                localStorage.setItem('roomNAME', chooseName);
+
+                window.location.href = 'file:///C:/Users/OWNER/Documents/00_Coeco/test.html';
+            });
+
+
+
+            $('#roomSend').click(function () {
+                roomsRef.doc().set({
+                    chat_name: $('#room_name').val()
+                });
+                $('#room_name').val('');
+            });
+
+            $('#reload').on('click', function () {
+                window.location.reload();
+            });
+
+        </script>
+    </body>
+
+</body>
+
+</html>
