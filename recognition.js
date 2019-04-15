@@ -3,9 +3,9 @@ SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
 
 // 使用チェック
 if ('SpeechRecognition' in window) {
-    console.log('対応しています');
+    console.log('認識に対応しています');
 } else {
-    alert('対応していません');
+    alert('認識に対応していません');
 }
 
 // マイクを通じた音声を自動的に認識
@@ -73,12 +73,12 @@ recognition.onresult = (event) => {
 
 
 
-$('#start_btn').on('click', function () {
+$('#start').on('click', function () {
     recognition.start();
 });
 
 
-$('#stop_btn').on('click', function () {
+$('#stop').on('click', function () {
     // 音声認識終了
     recognition.stop();
 });
