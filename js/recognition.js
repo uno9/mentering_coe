@@ -1,3 +1,6 @@
+// 音声認識
+
+
 // 音声認識でテキスト化
 SpeechRecognition = webkitSpeechRecognition || SpeechRecognition;
 

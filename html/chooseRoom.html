@@ -11,7 +11,7 @@
 <body>
 
     <head>
-        <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+        <script src="../js/jquery-3.3.1.min .js"></script>
         <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
         <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase-firestore.js"></script>
     </head>
@@ -29,8 +29,7 @@
 
             <div>
                 <input id="room_name" placeholder="chatRoom">
-                <button id="roomSend">投稿</button>
-                <button id="reload">更新</button>
+                <button id="roomSend">Create a room</button>
 
             </div>
 
@@ -83,7 +82,7 @@
                 console.log(chooseName);
                 localStorage.setItem('roomNAME', chooseName);
 
-                window.location.href = 'file:///C:/Users/OWNER/Documents/00_Coeco/cloud.html';
+                window.location.href = '../html/cloud.html';
             });
 
 
@@ -93,10 +92,12 @@
                     chat_name: $('#room_name').val()
                 });
                 $('#room_name').val('');
-            });
 
-            $('#reload').on('click', function () {
-                window.location.reload();
+                setTimeout(function () {
+                    window.location.reload();
+                }, 100);
+
+
             });
 
         </script>

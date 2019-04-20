@@ -5,16 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>ぷろとたいぷ</title>
+    <title>realtime</title>
 
 </head>
 
 <body>
 
     <main>
-        <header>
-            <p>ぷろとたいぷ</p>
-        </header>
 
         <div id="chat_box">
             <div class="name_box">
@@ -59,7 +56,7 @@
         </div>
 
     </main>
-    <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+    <script src="../../js/jquery-3.3.1.min .js"></script>
 
     <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase.js"></script>
     <script>
@@ -78,7 +75,7 @@
     </script>
 
     <!-- 音声認識によるチャット文入力 -->
-    <script type="text/javascript" src="../00_Coeco/recognition.js"></script>
+    <script type="text/javascript" src="../../js/recognition.js"></script>
 
 
     <script>
@@ -168,6 +165,8 @@
                 file_name = '';
                 blob = '';
             });
+
+            console.log(file_blob);
 
             // 日時の取得
             function ymd() {

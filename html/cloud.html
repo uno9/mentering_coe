@@ -11,7 +11,7 @@
 <body>
 
     <head>
-        <script src="../00_Coeco/jquery-3.3.1.min .js"></script>
+        <script src="../js/jquery-3.3.1.min .js "></script>
         <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase.js"></script>
         <script src="https://www.gstatic.com/firebasejs/4.11.0/firebase-firestore.js"></script>
     </head>
@@ -20,10 +20,18 @@
     <body>
         <header>
             <div id="chooseRoom"></div>
+
+            <div id='timer'>
+                <div id='box'>
+                    <p id='display'>120:00</p>
+                </div>
+            </div>
+
+
         </header>
 
         <div>
-            <a href="../00_Coeco/chooseRoom.html">room選択</a>
+            <a href="../html/chooseRoom.html">room選択</a>
         </div>
 
         <div id="chat_box">
@@ -64,23 +72,19 @@
                 <button id="clear">clear</button>
             </div>
 
-            <ul id="output"> </ul>
+        </div>
 
+        <div class="output_box">
+            <ul id="output"> </ul>
         </div>
 
 
-
-        <!-- <div>
-            <input id="name" placeholder="名前">
-            <input id="text" placeholder="メッセージ">
-            <button id="send">投稿</button>
-        </div> -->
-
-        <!-- <ul id="messages"></ul> -->
-
         <!-- 音声認識によるチャット文入力 -->
-        <script type="text/javascript" src="../00_Coeco/recognition.js"></script>
+        <script type="text/javascript" src="../js/recognition.js"></script>
+        <!-- カウントダウン処理 -->
+        <script src="../js/countdown.js"></script>
 
+        <script src="../js/synthesis.js"></script>
 
         <script>
 
@@ -170,7 +174,7 @@
                     // ページ遷移をなくす
                     e.preventDefault();
 
-                    // storageのaea_imagesへの参照を定義
+                    // storageのarea_imagesへの参照を定義
                     // storageの参照
 
                     var uploadRef = storage.ref('chat/').child(file_name);
@@ -203,43 +207,54 @@
                 }
 
 
-                // ------------------------------------------------------------------
+                // 送信-------------------------------------------------------------
+                // 送信制限3通
 
+                var chat_count = 0;
                 // 新規メッセージを投稿
                 $('#send').click(function () {
+                    chat_count++;
+                    console.log(chat_count);
 
-                    if (file_blob != null) {
-                        roomsRef.doc(chooseID).collection('messages').add({
-                            name: $('#name').val(),
-                            text: $('#text').val(),
-                            file: file_url,
-                            blob: file_blob.type,
-                            time: ymd()
-                        });
-                        $('#text').val('');
-                        $('#imgfile').val('');
-                        $('#audiofile').val('');
-                        $('#videofile').val('');
+                    if (chat_count < 4) {
 
-                        file_url = null;
-                        file_blob = null;
+                        if (file_blob != null) {
+                            roomsRef.doc(chooseID).collection('messages').add({
+                                name: $('#name').val(),
+                                text: $('#text').val(),
+                                file: file_url,
+                                blob: file_blob.type,
+                                time: ymd()
+                            });
+                            $('#text').val('');
+                            $('#imgfile').val('');
+                            $('#audiofile').val('');
+                            $('#videofile').val('');
+
+                            file_url = null;
+                            file_blob = null;
+
+                        } else {
+                            roomsRef.doc(chooseID).collection('messages').add({
+                                name: $('#name').val(),
+                                text: $('#text').val(),
+                                time: ymd()
+                            });
+                            $('#text').val('');
+                            $('#imgfile').val('');
+                            $('#audiofile').val('');
+                            $('#videofile').val('');
+
+                            file_url = null;
+                            file_blob = null;
+                        }
 
                     } else {
-                        roomsRef.doc(chooseID).collection('messages').add({
-                            name: $('#name').val(),
-                            text: $('#text').val(),
-                            time: ymd()
-                        });
-                        $('#text').val('');
-                        $('#imgfile').val('');
-                        $('#audiofile').val('');
-                        $('#videofile').val('');
-
-                        file_url = null;
-                        file_blob = null;
+                        alert('制限に達しました。')
+                        $('#chat_box').remove();
                     }
-                });
 
+                });
 
 
                 // チャットが追加されたら、更新表示
@@ -249,7 +264,6 @@
                         if (change.type === 'added') {
                             console.log(change.doc.id);
                             var doc_id = change.doc.id;
-
 
                             var str = '';
                             str += `<div id="${doc_id}">`;
@@ -277,6 +291,10 @@
                             str += `<button id=${doc_id} class="pause">一時停止</button>`;
                             str += `<button id=${doc_id} class="resume">再開</button>`;
 
+                            if (chooseNAME == 'My output') {
+                                str += `<button id=${doc_id} class="delete">削除</button>`;
+                            }
+
                             $('#output').prepend(str);
 
                         }
@@ -285,93 +303,21 @@
                 });
 
 
-                // 音声合成------------------------------------------
-                // IDを取得
-                if ('speechSynthesis' in window) {
-                    console.log('合成に対応してます');
-                } else {
-                    alert('合成に対応していません');
-                }
-
-
-
-                $('#output').on('click', '.speak', function () {
+                // コレクション削除-------------------------------
+                $('#output').on('click', '.delete', function () {
                     // clickを押した子要素の親idを取得
                     var divID = $(this).parent().attr('id');
                     console.log(divID);
 
-                    // clickをした class="speak" のidを取得
-                    var textID = $(this, '.speak').attr('id');
-                    console.log(textID);
 
-                    // 親divとspeakのidが同じならば
-                    if (divID == textID) {
-                        console.info(true);
-                        console.log('再生');
-
-                        // clickを押したspeakボタンの親要素に含まれる#chat_textのテキストを取得
-                        var docTEXT = $(this).parent().children('#chat_text').text();
-                        console.log(docTEXT);
-
-                        // 発言を作成(textarea内のval = textを取ってくる)
-                        var uttr = new SpeechSynthesisUtterance(docTEXT);
-
-                        // こえの設定------------------------------------
-                        // 言語の指定
-                        // アメリカ英語：es-US イギリス英語：en-GB 中国語：zh-CN 韓国語：ko-KR
-                        // 日本語を指定：ja-JP
-                        uttr.lang = 'ja-JP'
-                        // 速度(0.1-10)→初期値：１ 倍速：２、半分の倍速：0.5
-                        uttr.rate = 1.3
-                        // 音程(高さ 0-1)→初期値：１
-                        uttr.pitch = 1
-                        // 音量(0-1)→初期値：１
-                        uttr.volume = 1
-                        // ----------------------------------------------
-
-
-                        // 発言を再生 (発言キューにtextを追加)
-                        speechSynthesis.speak(uttr)
-
-                        textId = null;
-                        divID = null;
-                        docTEXT = null;
-                        uttr = null;
-
-                        // console.log(textId);
-                        // console.log(divID);
-                        // console.log(docTEXT);
-                        // console.log(uttr);
-
-
-                    } else {
-                        console.warn(false);
-                    }
+                    roomsRef.doc(chooseID).collection('messages').doc(divID).delete().then(function () {
+                        alert('削除しました');
+                    }).catch(function (error) {
+                        console.error('error removing document:', error);
+                    });
+                    window.location.reload();
 
                 });
-            });
-
-
-
-            $('#output').on('click', '.cancel', function () {
-                console.log('停止');
-                // 発言を停止(発言キューをクリアにして止まる) 
-                speechSynthesis.cancel()
-            });
-
-
-            $('#output').on('click', '.pause', function () {
-                console.log('一時停止');
-                // 一次停止(発言キューを保持して止まる) 
-                speechSynthesis.pause()
-
-            });
-
-
-            $('#output').on('click', '.resume', function () {
-                console.log('再開');
-                // 再生再開(一時停止解除) 
-                speechSynthesis.resume()
 
             });
 
